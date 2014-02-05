@@ -1,0 +1,51 @@
+#!/bin/bash
+
+NEW_STATE=$1
+
+MVN_PROXY=env-proxy
+
+SETTINGS_XML="$HOME/.m2/settings.xml"
+
+STATE=`grep -A 1 $MVN_PROXY "$SETTINGS_XML" | tail -1 | sed -e 's#[  ]*<active>\([a-z]*\)</active>#\1#'`
+
+if [ -z "$NEW_STATE" ]; then
+    case $STATE in
+        true)
+            NEW_STATE="false"
+            ;;
+        false)
+            NEW_STATE="true"
+            ;;
+        *)
+            echo "unknown state: $STATE"
+            exit 1
+            ;;
+    esac
+fi
+
+if [ -z "$PROXY_HOST" ]; then
+  PROXY_HOST=proxy
+  PROXY_PORT=8080
+fi
+
+REPLACEMENT=$(cat <<TEMPLATE
+<id>env-proxy</id>
+      <active>$NEW_STATE</active>
+      <protocol>http</protocol>
+      <host>${PROXY_HOST}</host>
+      <port>${PROXY_PORT}</port>
+    </proxy>
+TEMPLATE)
+
+if [ "$STATE" != "$NEW_STATE" ]; then
+  cp $SETTINGS_XML ${SETTINGS_XML}.org
+  replace-block.pl "<id>env-proxy</id>" "</proxy>" "$REPLACEMENT" ${SETTINGS_XML}.org > $SETTINGS_XML
+fi
+
+if [ "$NEW_STATE" = "false" ]; then 
+  LINES=1
+else 
+  LINES=4
+fi
+
+grep -A $LINES $MVN_PROXY "$SETTINGS_XML"

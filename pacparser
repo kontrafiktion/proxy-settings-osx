@@ -1,0 +1,7 @@
+#!/usr/bin/python
+import pacparser
+pacparser.init()
+pacparser.parse_pac_file('/tmp/proxy.pac')
+proxy = pacparser.find_proxy('http://www.google.com', 'www.google.com')
+print proxy
+pacparser.cleanup()

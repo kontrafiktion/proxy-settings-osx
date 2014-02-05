@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# make sure, script is sourced
+EXECUTED=`echo "$BASH"`
+if [[ "$EXECUTED" != "" ]]; then
+  echo "the script must be sourced not executed. Aborting"
+  exit 1
+fi
+
+# make sure, script runs on OS X
+if [ "Darwin" != `uname` ]; then 
+    echo "This script is only tested on OSX. Aborting"
+    return 1
+fi
+
+# make sure, pacparser is installed
+type pacparser >/dev/null 2>&1 || { echo >&2 "'pacparser' required.  Aborting."; return 2; }
+
+function enabled() {
+  echo "$1" | grep "^Enabled" | sed "s/[a-zA-Z]*: \(.*\)/\1/"
+}
+
+#--------------------------------------------------------------------------------------------------
+# MAIN
+#--------------------------------------------------------------------------------------------------
+
+# determine the network service name for the default route
+INTERFACE=`route -n get default | grep interface | sed "s/.*interface: \(.*\)/\1/"`
+NETWORK=`networksetup -listnetworkserviceorder | grep -B1 "$INTERFACE" | head -n 1 | sed "s/([0-9]*) \(.*\)/\1/"`
+echo "using '$NETWORK'"
+
+# currently two proxy configurations are supported: 
+# a proxy that is explicitely set with host and port and
+# an Automatic Proxy Configuration with .pac file.
+# Auto-Discovery is not (yet) supported
+
+
+# proxy explicitely set?
+PROXY_INFO=`networksetup -getwebproxy "$NETWORK"`
+PROXY_ENABLED=`enabled "$PROXY_INFO"`
+
+if [ "$PROXY_ENABLED" = "Yes" ]; then 
+  export PROXY_HOST=`echo "$PROXY_INFO" | grep Server | sed "s/[a-zA-Z]*: \(.*\)/\1/"`
+  export PROXY_PORT=`echo "$PROXY_INFO" | grep Port | sed "s/[a-zA-Z]*: \(.*\)/\1/"`
+  PROXY="$PROXY_HOST:$PROXY_PORT"
+else
+  # proxy not explicitely set, try proxy.pac
+  PROXY_INFO=`networksetup -getautoproxyurl $NETWORK`
+  PROXY_ENABLED=`enabled "$PROXY_INFO"`
+  if [ "$PROXY_ENABLED" = "Yes" ]; then 
+    PROXY_PAC=`echo "$PROXY_INFO" | grep "^URL:" | sed "s/URL: //"`
+    echo "proxy.pac: $PROXY_PAC"
+    if [ -e /tmp/proxy.pac ]; then 
+      if test "`find /tmp/proxy.pac -mmin +1440`"; then 
+        curl -s $PROXY_PAC > /tmp/proxy.pac
+      fi
+    else
+      curl -s $PROXY_PAC > /tmp/proxy.pac
+    fi 
+
+    # use the pacparser to get the proxy
+    PROXY=`pacparser | sed "s/PROXY //"`
+    PROXY_PARTS=( `echo "$PROXY" | tr -s ':' ' '` )
+    export PROXY_HOST="$PROXY_PARTS[1]"
+    export PROXY_PORT="$PROXY_PARTS[2]"
+  fi
+fi
+
+
+
+# set/unset environment variables, git and Maven settings
+if [ "$PROXY_ENABLED" = "Yes" ]; then 
+  echo "  setting http_proxy: $PROXY"
+  export http_proxy=`echo "$PROXY"`
+  export https_proxy=`echo "$PROXY"`
+  git config --global http.proxy "http://$PROXY"
+  echo "    settings.xml:"
+  mvn-proxy-patch true
+else 
+  echo "  unset http_proxy"
+  export http_proxy=
+  export https_proxy=
+  git config --global --unset http.proxy
+  echo "    settings.xml:"
+  mvn-proxy-patch false
+fi
