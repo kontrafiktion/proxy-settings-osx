@@ -29,7 +29,7 @@ which produces something like:
     (1) Wi-Fi
     (Hardware Port: Wi-Fi, Device: en0)
     
-    (2) iPhone USB 5 weiß
+    (2) iPhone
     (Hardware Port: iPhone USB, Device: en5)
 
 and grep for the device (and then get the previous line, etc.).
@@ -75,6 +75,10 @@ I have created a simple entry for the proxy, the id must be "env-proxy":
     </proxies>
 
 This whole block is replaced by the correct settings with the active-flag switched to true.    
+
+### Un-setting
+
+Invoking the script when no proxy can be determined removes/deactivates the proxy settings (git, Maven's settings.xml and environment variables)
 
 ### Install
 
