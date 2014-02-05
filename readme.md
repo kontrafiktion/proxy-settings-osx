@@ -1,4 +1,4 @@
-# Switching proxy settings for Maven, git, etc. (on OS X)
+## Switching proxy settings for Maven, git, etc. (on OS X)
 
 ![](proxies-keynote.001.png)
 I am currently working for two customers at three different locations (and at home). And the proxy settings differ at every location! Sometimes I have to switch from the internal network (with proxy) to my iPhone HotSpot and then back again.
@@ -13,9 +13,9 @@ I tried to use a local proxy, but had some problems with Outlook (for OS X).
 
 So I ended up creating a small shell script that checks for the proxy settings in OS X and patch Maven's `settings.xml` and the git configuration (as well as setting the environment variable `http_proxy`). It has served me well in the last weeks, so I wanted to share it.
 
-## Determining the current default network
+### Determining the current default network
 
-You can have multiple active network interfaces (e.g. "Wi-Fi" and your iPhone, but one is the 'default' interface, which you can determine with:
+You can have multiple active network interfaces (e.g. "Wi-Fi" and your iPhone), but one is the 'default' interface, which you can determine with:
 
     route -n get default
 
@@ -36,13 +36,13 @@ and grep for the device (and then get the previous line, etc.).
 
 After all this I have the name  default _network service_ name.
 
-## Determining the proxy url
+### Determining the proxy url
 
 First the proxy URL from the network settings is needed. To retrieve the proxy settings, I use:
 
-    networksetup -getwebproxy "$NETWORK"
+    networksetup -getwebproxy "<network service name>"
 
-where `$NETWORK` defaults to "Wi-Fi" (you can retrieve the list of all known networks via: `networksetup -listallnetworkservices`). The above statement prints something like:
+The above statement prints something like:
 
     Enabled: Yes
     Server: 10.2.58.17
@@ -59,7 +59,7 @@ When I have the PROXY_HOST and the PROXY_PORT, I can set some environment variab
 
     git config --global http.proxy "http://$PROXY"
     
-## switching Maven proxy settings
+### Switching Maven proxy settings
 
 The proxy settings for Maven are located in `$HOME/.m2/settings.xml`.
 I have created a simple entry for the proxy, the id must be "env-proxy":
@@ -76,7 +76,7 @@ I have created a simple entry for the proxy, the id must be "env-proxy":
 
 This whole block is replaced by the correct settings with the active-flag switched to true.    
 
-## Install
+### Install
 
 1. install [pacparser](https://code.google.com/p/pacparser/downloads/list)
 2. clone [https://github.com/vrvolle/proxy-settings-osx.git](https://github.com/vrvolle/proxy-settings-osx.git) 
@@ -84,7 +84,7 @@ This whole block is replaced by the correct settings with the active-flag switch
 4. make them executable
 5. add a proxy entry "env-proxy" to your settings.xml
 
-## Invoke
+### Invoke
 
 To invoke the script, you must `source` it. Otherwise the environment variables will not be set:
 
