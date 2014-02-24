@@ -1,11 +1,30 @@
 #!/bin/bash
 
 # make sure, script is sourced
-EXECUTED=`echo "$BASH"`
-if [[ "$EXECUTED" != "" ]]; then
-  echo "the script must be sourced not executed. Aborting"
+# -------------------------------------------------------------------------------------------------
+SOURCED=0
+if [[ "$BASH" = "" ]]; then
+  # not bash
+  if [[ "$ZSH" != "" ]]; then
+    # zsh
+    SOURCED=1
+  else
+    echo "Unsupported shell. Exiting"
+    exit 1
+  fi
+else
+  # bash
+  COMMAND=`awk -F/ '{print $NF}' <<< $0` 
+  if [[ "$COMMAND" = "bash" ]]; then
+    SOURCED=1
+  fi
+fi
+
+if [ $SOURCED = 0 ]; then
+  echo "script must be sourced. Exiting ..."
   exit 1
 fi
+# -------------------------------------------------------------------------------------------------
 
 # make sure, script runs on OS X
 if [ "Darwin" != `uname` ]; then 
@@ -60,9 +79,14 @@ else
 
     # use the pacparser to get the proxy
     PROXY=`pacparser | sed "s/PROXY //"`
-    PROXY_PARTS=( `echo "$PROXY" | tr -s ':' ' '` )
-    export PROXY_HOST="$PROXY_PARTS[1]"
-    export PROXY_PORT="$PROXY_PARTS[2]"
+
+    export PROXY_HOST=`echo "$PROXY" | sed 's/\(.*\):.*/\1/'`
+    export PROXY_PORT=`echo "$PROXY" | sed 's/.*:\(.*\)/\1/'`
+    
+    # not supported on bash 3.x:
+    # PROXY_PARTS=( `echo "$PROXY" | tr -s ':' ' '` )
+    # export PROXY_HOST="$PROXY_PARTS[1]"
+    # export PROXY_PORT="$PROXY_PARTS[2]"
   fi
 fi
 
