@@ -70,11 +70,13 @@ fi
 
 # set/unset environment variables, git and Maven settings
 if [ "$PROXY_ENABLED" = "Yes" ]; then 
-  echo "  setting http_proxy: $PROXY"
-  export http_proxy=`echo "$PROXY"`
-  export https_proxy=`echo "$PROXY"`
-  git config --global http.proxy "http://$PROXY"
+  echo "  setting http_proxy: http://$PROXY"
+  PROXY_URL=`echo "http://$PROXY"`
+  export http_proxy="$PROXY_URL"
+  export https_proxy="$PROXY_URL"
+  git config --global http.proxy "$PROXY_URL"
   echo "    settings.xml:"
+  # uses $PROXY_HOST and $PROXY_PORT
   mvn-proxy-patch true
 else 
   echo "  unset http_proxy"
