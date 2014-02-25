@@ -32,13 +32,15 @@ which produces something like:
     (2) iPhone
     (Hardware Port: iPhone USB, Device: en5)
 
-and grep for the device (and then get the previous line, etc.).
+I have to grep for the "Device" (and then get the previous line, etc.).
 
-After all this I have the name  default _network service_ name.
+After all this I have the default _network service_ name.
 
-### Determining the proxy url
+### Determining the proxy
 
-First the proxy URL from the network settings is needed. To retrieve the proxy settings, I use:
+#### explicit proxy settings
+
+If the host and port of the proxy are set explicitely, I can retrieve the sttings with
 
     networksetup -getwebproxy "<network service name>"
 
@@ -49,17 +51,23 @@ The above statement prints something like:
     Port: 8080
     Authenticated Proxy Enabled: 0
 
+#### proxy.pac
+
 But if I have a `proxy.pac` configured, I need to call 
 
     networksetup -getautoproxyurl Wi-Fi
 
 which returns the URL for the `proxy.pac` file. This file is a simple JavaScript file that can be parsed with the help of [pacparser](https://code.google.com/p/pacparser/)
 
+### Configuring Git, Maven, etc.
+
+#### Git config
+
 When I have the PROXY_HOST and the PROXY_PORT, I can set some environment variables and tell git to use the proxy:
 
-    git config --global http.proxy "http://$PROXY"
+    git config --global http.proxy "http://$PROXY_HOST:$PROXY_PRT"
     
-### Switching Maven proxy settings
+#### Maven proxy settings
 
 The proxy settings for Maven are located in `$HOME/.m2/settings.xml`.
 I have created a simple entry for the proxy, the id must be "env-proxy":
