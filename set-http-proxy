@@ -8,22 +8,26 @@ if [[ "$BASH" = "" ]]; then
   if [[ "$ZSH" != "" ]]; then
     # zsh
     SOURCED=1
+    SOURCE_DIR="${0%/*}"
   else
     echo "Unsupported shell. Exiting"
-    exit 1
+    exit 2
   fi
 else
   # bash
   COMMAND=`awk -F/ '{print $NF}' <<< $0` 
-  if [[ "$COMMAND" = "bash" ]]; then
+  if [ "x$COMMAND" = "xbash" -o "x$COMMAND" = "x-bash" ]; then
     SOURCED=1
   fi
+  SOURCE_DIR="${BASH_SOURCE[0]}"
 fi
 
 if [ $SOURCED = 0 ]; then
   echo "script must be sourced. Exiting ..."
   exit 1
 fi
+
+
 # -------------------------------------------------------------------------------------------------
 
 # make sure, script runs on OS X
