@@ -2,6 +2,14 @@
 
 NEW_STATE=$1
 
+# if [[ "$BASH" = "" ]]; then
+#   # assume zsh
+#   SOURCE_DIR="${0%/*}"
+# else
+#   SOURCE_DIR="${BASH_SOURCE[0]}"
+# fi
+
+
 MVN_PROXY=env-proxy
 
 SETTINGS_XML="$HOME/.m2/settings.xml"
@@ -37,10 +45,8 @@ REPLACEMENT=$(cat <<TEMPLATE
     </proxy>
 TEMPLATE)
 
-if [ "$STATE" != "$NEW_STATE" ]; then
-  cp $SETTINGS_XML ${SETTINGS_XML}.org
-  replace-block.pl "<id>env-proxy</id>" "</proxy>" "$REPLACEMENT" ${SETTINGS_XML}.org > $SETTINGS_XML
-fi
+cp $SETTINGS_XML ${SETTINGS_XML}.org
+replace-block.pl "<id>env-proxy</id>" "</proxy>" "$REPLACEMENT" ${SETTINGS_XML}.org > $SETTINGS_XML
 
 if [ "$NEW_STATE" = "false" ]; then 
   LINES=1

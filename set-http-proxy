@@ -5,12 +5,13 @@
 SOURCED=0
 if [[ "$BASH" = "" ]]; then
   # not bash
-  if [[ "$ZSH" != "" ]]; then
+  if [[ "$ZSH_VERSION" != "" ]]; then
     # zsh
     SOURCED=1
     SOURCE_DIR="${0%/*}"
   else
     echo "Unsupported shell. Exiting"
+    read
     exit 2
   fi
 else
@@ -27,6 +28,32 @@ if [ $SOURCED = 0 ]; then
   exit 1
 fi
 
+
+log() {
+  if [[ $VERBOSE == 1 ]]; then
+    echo $*
+  fi
+}
+
+logvar() {
+  local var=$1
+  if [[ "$ZSH_VERSION" != "" ]]; then
+    log "${var}: ${(P)var}"
+  else # bash
+    log "${var}: ${!var}"
+  fi
+}
+
+for i in "$@"; do
+  case $i in
+    -v|--verbose) VERBOSE=1 
+                  echo VERBOSE
+                  ;;
+    *)            INTERFACE=$i ;;
+  esac
+done
+
+logvar INTERFACE
 
 # -------------------------------------------------------------------------------------------------
 
@@ -48,8 +75,20 @@ function enabled() {
 #--------------------------------------------------------------------------------------------------
 
 # determine the network service name for the default route
-INTERFACE=`route -n get default | grep interface | sed "s/.*interface: \(.*\)/\1/"`
+if [[ -z "$INTERFACE" ]]; then
+  INTERFACE=`route -n get default | grep interface | sed "s/.*interface: \(.*\)/\1/"`
+fi
+
+if [[ "$INTERFACE" == "" ]]; then
+  echo could not determine the interface
+  return 2
+fi 
+
+logvar INTERFACE
+
+
 NETWORK=`networksetup -listnetworkserviceorder | grep -B1 "$INTERFACE" | head -n 1 | sed "s/([0-9]*) \(.*\)/\1/"`
+logvar NETWORK
 echo "using '$NETWORK'"
 
 # currently two proxy configurations are supported: 
@@ -83,7 +122,7 @@ else
 
     # use the pacparser to get the proxy
     PROXY=`pacparser | sed "s/PROXY //"`
-
+   
     export PROXY_HOST=`echo "$PROXY" | sed 's/\(.*\):.*/\1/'`
     export PROXY_PORT=`echo "$PROXY" | sed 's/.*:\(.*\)/\1/'`
     
@@ -108,8 +147,8 @@ if [ "$PROXY_ENABLED" = "Yes" ]; then
   mvn-proxy-patch true
 else 
   echo "  unset http_proxy"
-  export http_proxy=
-  export https_proxy=
+  unset http_proxy
+  unset https_proxy
   git config --global --unset http.proxy
   echo "    settings.xml:"
   mvn-proxy-patch false
