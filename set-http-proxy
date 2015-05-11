@@ -114,10 +114,10 @@ else
     echo "proxy.pac: $PROXY_PAC"
     if [ -e /tmp/proxy.pac ]; then 
       if test "`find /tmp/proxy.pac -mmin +1440`"; then 
-        curl -s $PROXY_PAC > /tmp/proxy.pac
+        curl -sL $PROXY_PAC > /tmp/proxy.pac
       fi
     else
-      curl -s $PROXY_PAC > /tmp/proxy.pac
+      curl -sL $PROXY_PAC > /tmp/proxy.pac
     fi 
 
     # use the pacparser to get the proxy
